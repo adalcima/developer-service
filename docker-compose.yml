@@ -1,0 +1,60 @@
+version: '3.7'
+
+services:
+  webserver: 
+    image: nginx:1.17.9
+    container_name: nginx-webserver
+    # restart: always
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ./nginx/config:/etc/nginx
+      - ./nginx/logs:/var/log/nginx
+      - ./nginx/ssl/letsencrypt:/etc/letsencrypt
+      - ./nginx/ssl/certbot:/var/www/certbot
+    command: /bin/sh -c "while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g 'daemon off;'"
+    networks:
+      service-network:
+        ipv4_address: 172.21.0.2
+
+  gitlab-ce:
+    image: 'gitlab/gitlab-ce:13.1.2-ce.0'
+    container_name: gitlab-ce
+    # restart: always
+    hostname: 'gitlab.relappro.com'
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'http://gitlab.relappro.com'
+        gitlab_rails['gitlab_shell_ssh_port'] = 2224
+        web_server['external_users'] = ['www-data']
+    ports:
+      - '8929:80'
+      - '2224:22'
+    volumes:
+      - '/srv/gitlab/config:/etc/gitlab'
+      - '/srv/gitlab/logs:/var/log/gitlab'
+      - '/srv/gitlab/data:/var/opt/gitlab'
+    depends_on:
+      - webserver
+    networks:
+      service-network:
+        ipv4_address: 172.21.0.3
+
+  certbot:
+    container_name: certbot
+    image: certbot/certbot
+    volumes:
+      - ./nginx/ssl/letsencrypt:/etc/letsencrypt
+      - ./nginx/ssl/certbot:/var/www/certbot
+    # restart: unless-stopped
+    entrypoint: /bin/sh -c "trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;"
+    depends_on:
+      - webserver
+
+networks:
+  service-network:
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.21.0.0/16
