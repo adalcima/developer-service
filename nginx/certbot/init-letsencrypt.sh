@@ -5,9 +5,9 @@ if ! [ -x "$(command -v docker-compose)" ]; then
   exit 1
 fi
 
-domains=(gitlab.relappro.com www.gitlab.relappro.com)
+domains=(gitlab.relappro.com)
 rsa_key_size=4096
-data_path="./nginx/ssl"
+data_path="./nginx/certbot"
 email="acima@relap.pro" # Adding a valid address is strongly recommended
 staging=0 # Set to 1 if you're testing your setup to avoid hitting request limits
 
