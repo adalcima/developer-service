@@ -41,9 +41,17 @@ services:
       service-network:
         ipv4_address: 172.21.0.3
 
+  gitlab-runner:
+    image: gitlab/gitlab-runner:latest
+    container_name: gitlab-runner
+    restart: always
+    volumes:
+      - '/srv/gitlab-runner/config:/etc/gitlab-runner'
+      - '/var/run/docker.sock:/var/run/docker.sock'
+
   certbot:
-    container_name: certbot
     image: certbot/certbot
+    container_name: certbot
     volumes:
       - ./nginx/certbot/conf:/etc/letsencrypt
       - ./nginx/certbot/www:/var/www/certbot
